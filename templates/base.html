@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tasks App</title>
+    <link rel="icon" href="data:;base64,=" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+  </head>
+  <body>
+    <div style="margin-top: 50px" class="ui container">
+      <h1 class="ui center aligned header">Tasks</h1>
+
+      <form
+        id="taskForm"
+        class="ui form"
+        action="/add"
+        method="post"
+        onsubmit="submitForm(event)"
+      >
+        <div class="field">
+          <label for="title">Заголовок задачи</label>
+          <input
+            type="text"
+            name="title"
+            id="title"
+            placeholder="Введите заголовок задачи"
+            required
+          />
+
+          <label for="description">Описание задачи</label>
+          <input
+            type="text"
+            name="description"
+            id="description"
+            placeholder="Введите описание задачи"
+            required
+          />
+
+          <div class="subtasks-container" id="subtasks-container">
+            <div class="subtask">
+              <label for="subtask0_name">Название подзадачи 1</label>
+              <input
+                type="text"
+                name="subtasks[0].name"
+                id="subtask0_name"
+                placeholder="Введите название первой подзадачи"
+                required
+              />
+
+              <label for="subtask0_description">Описание подзадачи 1</label>
+              <input
+                type="text"
+                name="subtasks[0].description"
+                id="subtask0_description"
+                placeholder="Введите описание первой подзадачи"
+                required
+              />
+
+              <input type="hidden" name="subtasks[0].task_id" value="0" />
+            </div>
+          </div>
+
+          <button type="button" class="ui button" onclick="addSubtask()">
+            Добавить подзадачу
+          </button>
+
+          <br />
+        </div>
+        <button class="ui blue button" type="submit">Добавить</button>
+      </form>
+
+      <hr />
+
+      {% for task in tasks %}
+      <div class="ui segment">
+        <p class="ui big header">{{ task.id }} | {{ task.title }}</p>
+        {{ task.description }} 
+        {% for subtask in task.subtasks %}
+        <li><em>{{ subtask.name }}</em>: {{ subtask.description }}</li>
+        {% endfor %}
+        <hr />
+        <a class="ui red button" href="/delete/{{ task.id }}">Delete</a>
+      </div>
+      {% endfor %}
+    </div>
+  </body>
+</html>
+<script>
+  let subtaskCount = 1;
+
+  function addSubtask() {
+    const subtasksContainer = document.getElementById("subtasks-container");
+    const newSubtask = document.createElement("div");
+    newSubtask.classList.add("subtask");
+
+    newSubtask.innerHTML = `
+      <label for="subtask${subtaskCount}_name">Название подзадачи ${
+      subtaskCount + 1
+    }</label>
+      <input type="text" name="subtasks[${subtaskCount}].name" id="subtask${subtaskCount}_name" placeholder="Введите название подзадачи" required>
+
+      <label for="subtask${subtaskCount}_description">Описание подзадачи ${
+      subtaskCount + 1
+    }</label>
+      <input type="text" name="subtasks[${subtaskCount}].description" id="subtask${subtaskCount}_description" placeholder="Введите описание подзадачи" required>
+      <input type="hidden" name="subtasks[${subtaskCount}].task_id" value="0">
+      `;
+
+    subtasksContainer.appendChild(newSubtask);
+    subtaskCount++;
+  }
+
+  function submitForm(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const jsonData = { subtasks: [] };
+
+    formData.forEach((value, key) => {
+      if (key.startsWith("subtasks[")) {
+        // Handle subtask data
+        const subtaskIndex = key.match(/\[(\d+)\]/)[1];
+        const subtaskProperty = key.match(/\.(.*)/)[1];
+        if (!jsonData.subtasks[subtaskIndex]) {
+          jsonData.subtasks[subtaskIndex] = {};
+        }
+        jsonData.subtasks[subtaskIndex][subtaskProperty] = value;
+      } else {
+        jsonData[key] = value;
+      }
+    });
+
+    // Remove undefined values from subtasks array
+    jsonData.subtasks = jsonData.subtasks.filter(
+      (subtask) => subtask !== undefined
+    );
+
+    fetch("/add", {
+      method: "POST",
+      body: JSON.stringify(jsonData),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        if (response.ok) {
+          // Перенаправление на главную страницу
+          window.location.href = "/";
+        } else {
+          // Обработка ошибки
+        }
+      })
+      .catch((error) => {
+        // Обработка ошибки
+      });
+  }
+</script>
