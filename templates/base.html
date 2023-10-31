@@ -79,8 +79,7 @@
       {% for task in tasks %}
       <div class="ui segment">
         <p class="ui big header">{{ task.id }} | {{ task.title }}</p>
-        {{ task.description }} 
-        {% for subtask in task.subtasks %}
+        {{ task.description }} {% for subtask in task.subtasks %}
         <li><em>{{ subtask.name }}</em>: {{ subtask.description }}</li>
         {% endfor %}
         <hr />
